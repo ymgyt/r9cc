@@ -47,3 +47,14 @@ fn unary_test() {
         Node::with(Kind::Mul, Node::ops(Kind::Sub, 0, 3), Node::number(5),)
     );
 }
+
+#[test]
+fn comparison_operator_test() {
+    // '3 == 3'
+    let s = vec![
+        Token::number(3, Loc(0, 1)),
+        Token::equal(Loc(2, 4)),
+        Token::number(3, Loc(5, 6)),
+    ];
+    assert_eq!(parse(s).unwrap(), Node::ops(Kind::Eq, 3, 3),)
+}
