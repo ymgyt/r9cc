@@ -62,13 +62,13 @@ where
         let mut node = self.add()?;
         loop {
             if self.consume(TokenKind::Lt)? {
-                node = Node::with(Kind::Gt, self.add()?, node);
+                node = Node::with(Kind::Lt, node, self.add()?);
             } else if self.consume(TokenKind::Le)? {
-                node = Node::with(Kind::Ge, self.add()?, node);
+                node = Node::with(Kind::Le, node, self.add()?);
             } else if self.consume(TokenKind::Gt)? {
-                node = Node::with(Kind::Gt, node, self.add()?);
+                node = Node::with(Kind::Lt, self.add()?, node);
             } else if self.consume(TokenKind::Ge)? {
-                node = Node::with(Kind::Ge, node, self.add()?);
+                node = Node::with(Kind::Le, self.add()?, node);
             } else {
                 return Ok(node);
             }

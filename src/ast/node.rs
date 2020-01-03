@@ -6,8 +6,8 @@ pub enum Kind {
     Div,
     Eq,
     Ne,
-    Ge,
-    Gt,
+    Lt,
+    Le,
     Number(u64),
 }
 
@@ -30,7 +30,7 @@ impl Node {
     pub fn ops(kind: Kind, lhs: u64, rhs: u64) -> Node {
         use Kind::*;
         match kind {
-            Add | Sub | Mul | Div | Eq | Ne | Ge | Gt => {
+            Add | Sub | Mul | Div | Eq | Ne | Le | Lt => {
                 Node::with(kind, Node::number(lhs), Node::number(rhs))
             }
             _ => panic!("operation kind required. got {:?}", kind),
