@@ -3,8 +3,7 @@ use std::{env, io, process};
 
 fn main() {
     let result = env::args()
-        .skip(1)
-        .next()
+        .nth(1)
         .ok_or(Error::InputRequired)
         .and_then(|input| tokenize(&input))
         .and_then(|tokens| parse(tokens))
