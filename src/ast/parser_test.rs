@@ -11,14 +11,7 @@ fn parse_test() {
     ];
 
     let node = parse(s).unwrap();
-    assert_eq!(
-        node,
-        Node::new(
-            Kind::Add,
-            Node::link(Node::number(10)),
-            Node::link(Node::number(20)),
-        ),
-    );
+    assert_eq!(node, Node::ops(Kind::Add, 10, 20),);
 
     // 1*(2+3)
     let s = vec![
@@ -34,15 +27,7 @@ fn parse_test() {
     let node = parse(s).unwrap();
     assert_eq!(
         node,
-        Node::new(
-            Kind::Mul,
-            Node::link(Node::number(1)),
-            Node::link(Node::new(
-                Kind::Add,
-                Node::link(Node::number(2)),
-                Node::link(Node::number(3)),
-            )),
-        ),
+        Node::with(Kind::Mul, Node::number(1), Node::ops(Kind::Add, 2, 3),),
     );
 }
 
@@ -59,14 +44,6 @@ fn unary_test() {
     let node = parse(s).unwrap();
     assert_eq!(
         node,
-        Node::new(
-            Kind::Mul,
-            Node::link(Node::new(
-                Kind::Sub,
-                Node::link(Node::number(0)),
-                Node::link(Node::number(3)),
-            )),
-            Node::link(Node::number(5)),
-        ),
+        Node::with(Kind::Mul, Node::ops(Kind::Sub, 0, 3), Node::number(5),)
     );
 }

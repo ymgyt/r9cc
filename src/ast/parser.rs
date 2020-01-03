@@ -33,9 +33,9 @@ where
     let mut node = mul(tokens)?;
     loop {
         if consume(tokens, TokenKind::Plus)? {
-            node = Node::new(Kind::Add, Node::link(node), Node::link(mul(tokens)?));
+            node = Node::with(Kind::Add, node, mul(tokens)?);
         } else if consume(tokens, TokenKind::Minus)? {
-            node = Node::new(Kind::Sub, Node::link(node), Node::link(mul(tokens)?));
+            node = Node::with(Kind::Sub, node, mul(tokens)?)
         } else {
             return Ok(node);
         }
@@ -50,9 +50,9 @@ where
     let mut node = unary(tokens)?;
     loop {
         if consume(tokens, TokenKind::Asterisk)? {
-            node = Node::new(Kind::Mul, Node::link(node), Node::link(unary(tokens)?));
+            node = Node::with(Kind::Mul, node, unary(tokens)?);
         } else if consume(tokens, TokenKind::Slash)? {
-            node = Node::new(Kind::Div, Node::link(node), Node::link(unary(tokens)?));
+            node = Node::with(Kind::Div, node, unary(tokens)?);
         } else {
             return Ok(node);
         }
