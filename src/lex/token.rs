@@ -1,6 +1,6 @@
-use std::{cell::Cell, error::Error as StdError, fmt, result::Result as StdResult};
+use std::{cell::Cell, cmp::min, error::Error as StdError, fmt, result::Result as StdResult};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ErrorKind {
     InvalidChar(char),
     Eof,
@@ -58,6 +58,12 @@ pub enum TokenKind {
     Slash,       // '/'
     LParen,      // '('
     RParen,      // ')'
+    Eq,          //  ==
+    Ne,          // !=
+    Ge,          // >=
+    Gt,          // >
+    Le,          // <=
+    Lt,          // <
     Eof,         // sentinel
 }
 
@@ -94,14 +100,32 @@ impl Token {
     pub(crate) fn rparen(loc: Loc) -> Self {
         Self::new(TokenKind::RParen, loc)
     }
-    fn eof(loc: Loc) -> Self {
-        Self::new(TokenKind::Eof, loc)
+    pub(crate) fn equal(loc: Loc) -> Self {
+        Self::new(TokenKind::Eq, loc)
+    }
+    pub(crate) fn not_equal(loc: Loc) -> Self {
+        Self::new(TokenKind::Ne, loc)
+    }
+    pub(crate) fn greater_equal(loc: Loc) -> Self {
+        Self::new(TokenKind::Ge, loc)
+    }
+    pub(crate) fn greater_than(loc: Loc) -> Self {
+        Self::new(TokenKind::Gt, loc)
+    }
+    pub(crate) fn less_equal(loc: Loc) -> Self {
+        Self::new(TokenKind::Le, loc)
+    }
+    pub(crate) fn less_than(loc: Loc) -> Self {
+        Self::new(TokenKind::Lt, loc)
     }
     pub(crate) fn is_kind(&self, kind: TokenKind) -> bool {
         match self.value {
             TokenKind::Number(_) => kind.is_number(),
             _ => self.value == kind,
         }
+    }
+    fn eof(loc: Loc) -> Self {
+        Self::new(TokenKind::Eof, loc)
     }
 }
 
@@ -129,6 +153,19 @@ impl<'a> Input<'a> {
                 Ok(self.pos_then_inc())
             }
         })
+    }
+    fn consume_bytes(&self, want: &[u8]) -> Result<(bool, usize)> {
+        let pos = self.pos();
+        let tail = min(self.input.len(), pos + want.len());
+        let got = &self.input[pos..tail];
+        if got.len() != want.len() {
+            Ok((false, pos))
+        } else if got.iter().zip(want.iter()).all(|(b1, b2)| b1 == b2) {
+            self.inc_n(want.len());
+            Ok((true, pos))
+        } else {
+            Ok((false, pos))
+        }
     }
     fn consume_numbers(&self) -> Result<(usize, u64)> {
         let start = self.pos();
@@ -161,7 +198,10 @@ impl<'a> Input<'a> {
         self.pos.get()
     }
     fn inc(&self) {
-        self.pos.set(self.pos() + 1);
+        self.inc_n(1);
+    }
+    fn inc_n(&self, n: usize) {
+        self.pos.set(self.pos() + n);
     }
     fn pos_then_inc(&self) -> usize {
         let pos = self.pos();
@@ -201,6 +241,10 @@ pub fn tokenize(input: &str) -> StdResult<Stream, crate::Error> {
                 b'/' => push!(lex_slash(&input)),
                 b'(' => push!(lex_lparen(&input)),
                 b')' => push!(lex_rparen(&input)),
+                b'=' => push!(lex_equal(&input)),
+                b'!' => push!(lex_exclamation(&input)),
+                b'>' => push!(lex_greater(&input)),
+                b'<' => push!(lex_less(&input)),
                 _ if (b as char).is_ascii_whitespace() => input.consume_spaces(),
                 _ => {
                     return Err(
@@ -252,6 +296,46 @@ fn lex_rparen(input: &Input) -> Result<Token> {
     input
         .consume_byte(b')')
         .map(|pos| Token::rparen(Loc(pos, pos + 1)))
+}
+
+fn lex_equal(input: &Input) -> Result<Token> {
+    let (consumed, pos) = input.consume_bytes(&[b'=', b'='])?;
+    if consumed {
+        Ok(Token::equal(Loc(pos, pos + 2)))
+    } else {
+        Err(Error::invalid_char('=', Loc(pos, pos + 1)))
+    }
+}
+
+fn lex_exclamation(input: &Input) -> Result<Token> {
+    let (consumed, pos) = input.consume_bytes(&[b'!', b'='])?;
+    if consumed {
+        Ok(Token::not_equal(Loc(pos, pos + 2)))
+    } else {
+        Err(Error::invalid_char('!', Loc(pos, pos + 1)))
+    }
+}
+
+fn lex_greater(input: &Input) -> Result<Token> {
+    let (consumed, pos) = input.consume_bytes(&[b'>', b'='])?;
+    if consumed {
+        return Ok(Token::greater_equal(Loc(pos, pos + 2)));
+    } else {
+        input
+            .consume_byte(b'>')
+            .map(|pos| Token::greater_than(Loc(pos, pos + 1)))
+    }
+}
+
+fn lex_less(input: &Input) -> Result<Token> {
+    let (consumed, pos) = input.consume_bytes(&[b'<', b'='])?;
+    if consumed {
+        return Ok(Token::less_equal(Loc(pos, pos + 2)));
+    } else {
+        input
+            .consume_byte(b'<')
+            .map(|pos| Token::less_than(Loc(pos, pos + 1)))
+    }
 }
 
 #[cfg(test)]
