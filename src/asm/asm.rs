@@ -37,7 +37,35 @@ fn main_gen<W: Write>(w: &mut W, node: &Node) -> io::Result<()> {
             write!(w, "  cqo\n")?;
             write!(w, "  idiv rdi\n")?;
         }
-        _ => unreachable!(),
+        NodeKind::Eq => write!(
+            w,
+            "  {}",
+            "cmp rax, rdi\n  \
+             sete al\n  \
+             movzb rax, al\n",
+        )?,
+        NodeKind::Ne => write!(
+            w,
+            "  {}",
+            "cmp rax, rdi\n  \
+             setne al\n  \
+             movzb rax, al\n",
+        )?,
+        NodeKind::Lt => write!(
+            w,
+            "  {}",
+            "cmp rax, rdi\n  \
+             setl al\n  \
+             movzb rax, al\n",
+        )?,
+        NodeKind::Le => write!(
+            w,
+            "  {}",
+            "cmp rax, rdi\n  \
+             setle al\n  \
+             movzb rax, al\n",
+        )?,
+        NodeKind::Number(_) => unreachable!(),
     }
 
     write!(w, "  push rax\n")?;
