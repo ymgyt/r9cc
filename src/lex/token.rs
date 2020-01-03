@@ -59,7 +59,7 @@ pub enum TokenKind {
     LParen,      // '('
     RParen,      // ')'
     Eq,          //  ==
-    Nq,          // !=
+    Ne,          // !=
     Ge,          // >=
     Gt,          // >
     Le,          // <=
@@ -104,7 +104,7 @@ impl Token {
         Self::new(TokenKind::Eq, loc)
     }
     pub(crate) fn not_equal(loc: Loc) -> Self {
-        Self::new(TokenKind::Nq, loc)
+        Self::new(TokenKind::Ne, loc)
     }
     pub(crate) fn greater_equal(loc: Loc) -> Self {
         Self::new(TokenKind::Ge, loc)

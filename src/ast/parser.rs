@@ -38,7 +38,45 @@ where
         Self { tokens }
     }
 
+    // expr = equality
     fn expr(&mut self) -> Result<Node> {
+        self.equality()
+    }
+
+    // equality = relational ("==" relational | "!=" relational)*
+    fn equality(&mut self) -> Result<Node> {
+        let mut node = self.relational()?;
+        loop {
+            if self.consume(TokenKind::Eq)? {
+                node = Node::with(Kind::Eq, node, self.relational()?);
+            } else if self.consume(TokenKind::Ne)? {
+                node = Node::with(Kind::Ne, node, self.relational()?)
+            } else {
+                return Ok(node);
+            }
+        }
+    }
+
+    // relational = add ("<" add | "<=" add | ">" add | ">=" add)*
+    fn relational(&mut self) -> Result<Node> {
+        let mut node = self.add()?;
+        loop {
+            if self.consume(TokenKind::Lt)? {
+                node = Node::with(Kind::Gt, self.add()?, node);
+            } else if self.consume(TokenKind::Le)? {
+                node = Node::with(Kind::Ge, self.add()?, node);
+            } else if self.consume(TokenKind::Gt)? {
+                node = Node::with(Kind::Gt, node, self.add()?);
+            } else if self.consume(TokenKind::Ge)? {
+                node = Node::with(Kind::Ge, node, self.add()?);
+            } else {
+                return Ok(node);
+            }
+        }
+    }
+
+    // add = mul ("+" mul | "-" mul)*
+    fn add(&mut self) -> Result<Node> {
         let mut node = self.mul()?;
         loop {
             if self.consume(TokenKind::Plus)? {
@@ -51,6 +89,7 @@ where
         }
     }
 
+    // mul = unary ("*" unary | "/" unary)*
     fn mul(&mut self) -> Result<Node> {
         let mut node = self.unary()?;
         loop {
@@ -64,6 +103,7 @@ where
         }
     }
 
+    // unary = ("+" | "-")? primary
     fn unary(&mut self) -> Result<Node> {
         let node = if self.consume(TokenKind::Plus)? {
             self.primary()?
@@ -75,6 +115,7 @@ where
         Ok(node)
     }
 
+    // primary = num | "(" expr ")"
     fn primary(&mut self) -> Result<Node> {
         let node = if self.consume(TokenKind::LParen)? {
             let node = self.expr()?;

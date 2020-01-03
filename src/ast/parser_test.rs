@@ -50,11 +50,51 @@ fn unary_test() {
 
 #[test]
 fn comparison_operator_test() {
-    // '3 == 3'
+    // '1 == 3'
     let s = vec![
-        Token::number(3, Loc(0, 1)),
+        Token::number(1, Loc(0, 1)),
         Token::equal(Loc(2, 4)),
         Token::number(3, Loc(5, 6)),
     ];
-    assert_eq!(parse(s).unwrap(), Node::ops(Kind::Eq, 3, 3),)
+    assert_eq!(parse(s).unwrap(), Node::ops(Kind::Eq, 1, 3));
+
+    // '1 != 3'
+    let s = vec![
+        Token::number(1, Loc(0, 1)),
+        Token::not_equal(Loc(2, 4)),
+        Token::number(3, Loc(5, 6)),
+    ];
+    assert_eq!(parse(s).unwrap(), Node::ops(Kind::Ne, 1, 3));
+
+    // '1 >= 3'
+    let s = vec![
+        Token::number(1, Loc(0, 1)),
+        Token::greater_equal(Loc(2, 4)),
+        Token::number(3, Loc(5, 6)),
+    ];
+    assert_eq!(parse(s).unwrap(), Node::ops(Kind::Ge, 1, 3));
+
+    // '1 > 3'
+    let s = vec![
+        Token::number(1, Loc(0, 1)),
+        Token::greater_than(Loc(2, 3)),
+        Token::number(3, Loc(4, 5)),
+    ];
+    assert_eq!(parse(s).unwrap(), Node::ops(Kind::Gt, 1, 3));
+
+    // '1 <= 3'
+    let s = vec![
+        Token::number(1, Loc(0, 1)),
+        Token::less_equal(Loc(2, 4)),
+        Token::number(3, Loc(5, 6)),
+    ];
+    assert_eq!(parse(s).unwrap(), Node::ops(Kind::Ge, 3, 1));
+
+    // '1 < 3'
+    let s = vec![
+        Token::number(1, Loc(0, 1)),
+        Token::less_than(Loc(2, 3)),
+        Token::number(3, Loc(4, 5)),
+    ];
+    assert_eq!(parse(s).unwrap(), Node::ops(Kind::Gt, 3, 1));
 }
