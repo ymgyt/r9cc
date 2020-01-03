@@ -93,6 +93,7 @@ fn consume<Tokens>(tokens: &mut Peekable<Tokens>, kind: TokenKind) -> Result<boo
 where
     Tokens: Iterator<Item = Token>,
 {
+    // how can i make this code to a method chain :(
     let peek = tokens.peek();
     if peek.is_none() {
         return Ok(false);
@@ -110,35 +111,37 @@ fn expect<Tokens>(tokens: &mut Peekable<Tokens>, kind: TokenKind) -> Result<()>
 where
     Tokens: Iterator<Item = Token>,
 {
-    let peek = tokens.peek();
-    if peek.is_none() {
-        return Err(Error::Eof);
-    }
-    let peek = peek.unwrap();
-    if peek.is_kind(kind) {
-        tokens.next();
-        Ok(())
-    } else {
-        Err(Error::UnexpectedToken(peek.clone()))
-    }
+    tokens
+        .peek()
+        .ok_or(Error::Eof)
+        .and_then(|peek| {
+            if peek.is_kind(kind) {
+                Ok(())
+            } else {
+                Err(Error::UnexpectedToken(peek.clone()))
+            }
+        })
+        .map(|unit| {
+            tokens.next();
+            unit
+        })
 }
 
 fn expect_number<Tokens>(tokens: &mut Peekable<Tokens>) -> Result<u64>
 where
     Tokens: Iterator<Item = Token>,
 {
-    let peek = tokens.peek();
-    if peek.is_none() {
-        return Err(Error::Eof);
-    }
-    let peek = peek.unwrap();
-    match peek.value {
-        TokenKind::Number(n) => {
+    tokens
+        .peek()
+        .ok_or(Error::Eof)
+        .and_then(|peek| match peek.value {
+            TokenKind::Number(n) => Ok(n),
+            _ => Err(Error::UnexpectedToken(peek.clone())),
+        })
+        .map(|n| {
             tokens.next();
-            Ok(n)
-        }
-        _ => Err(Error::UnexpectedToken(peek.clone())),
-    }
+            n
+        })
 }
 
 #[cfg(test)]
