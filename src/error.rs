@@ -1,6 +1,7 @@
 use crate::{ast, lex};
 use std::{error::Error as StdError, fmt, io};
 
+#[derive(Debug)]
 pub enum Error {
     InputRequired,
     Lexer(lex::Error),
@@ -15,18 +16,6 @@ impl fmt::Display for Error {
             InputRequired => write!(f, "input required"),
             _ => write!(f, "{}", self),
         }
-    }
-}
-
-impl fmt::Debug for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self)?;
-        let mut source = self.source();
-        while let Some(e) = source {
-            write!(f, "\n  {}", e)?;
-            source = e.source();
-        }
-        Ok(())
     }
 }
 

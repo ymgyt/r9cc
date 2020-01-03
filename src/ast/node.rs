@@ -20,6 +20,16 @@ impl Node {
     pub fn new(kind: Kind, lhs: Link, rhs: Link) -> Node {
         Self { kind, lhs, rhs }
     }
+    pub fn with(kind: Kind, lhs: Node, rhs: Node) -> Node {
+        Node::new(kind, Node::link(lhs), Node::link(rhs))
+    }
+    pub fn ops(kind: Kind, lhs: u64, rhs: u64) -> Node {
+        use Kind::*;
+        match kind {
+            Add | Sub | Mul | Div => Node::with(kind, Node::number(lhs), Node::number(rhs)),
+            _ => panic!("operation kind required. got {:?}", kind),
+        }
+    }
     pub fn link(node: Node) -> Link {
         Some(Box::new(node))
     }

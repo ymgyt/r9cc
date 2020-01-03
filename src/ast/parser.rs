@@ -25,6 +25,7 @@ pub fn parse(stream: Stream) -> StdResult<Node, crate::Error> {
     expr(&mut tokens).map_err(|e| crate::Error::from(e))
 }
 
+// expr = mul ( "+" mul | "-" mul )*
 fn expr<Tokens>(tokens: &mut Peekable<Tokens>) -> Result<Node>
 where
     Tokens: Iterator<Item = Token>,
@@ -41,22 +42,39 @@ where
     }
 }
 
+// mul = unary ( "*" unary | "/" unary)*
 fn mul<Tokens>(tokens: &mut Peekable<Tokens>) -> Result<Node>
 where
     Tokens: Iterator<Item = Token>,
 {
-    let mut node = primary(tokens)?;
+    let mut node = unary(tokens)?;
     loop {
         if consume(tokens, TokenKind::Asterisk)? {
-            node = Node::new(Kind::Mul, Node::link(node), Node::link(primary(tokens)?));
+            node = Node::new(Kind::Mul, Node::link(node), Node::link(unary(tokens)?));
         } else if consume(tokens, TokenKind::Slash)? {
-            node = Node::new(Kind::Div, Node::link(node), Node::link(primary(tokens)?));
+            node = Node::new(Kind::Div, Node::link(node), Node::link(unary(tokens)?));
         } else {
             return Ok(node);
         }
     }
 }
 
+// unary = ("+" | "-")? unary
+fn unary<Tokens>(tokens: &mut Peekable<Tokens>) -> Result<Node>
+where
+    Tokens: Iterator<Item = Token>,
+{
+    let node = if consume(tokens, TokenKind::Plus)? {
+        primary(tokens)?
+    } else if consume(tokens, TokenKind::Minus)? {
+        Node::ops(Kind::Sub, 0, expect_number(tokens)?)
+    } else {
+        primary(tokens)?
+    };
+    Ok(node)
+}
+
+// primary = "(" expr ")" | num
 fn primary<Tokens>(tokens: &mut Peekable<Tokens>) -> Result<Node>
 where
     Tokens: Iterator<Item = Token>,

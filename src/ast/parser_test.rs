@@ -45,3 +45,28 @@ fn parse_test() {
         ),
     );
 }
+
+#[test]
+fn unary_test() {
+    // -3*+5
+    let s = vec![
+        Token::minus(Loc(0, 1)),
+        Token::number(3, Loc(1, 2)),
+        Token::asterisk(Loc(2, 3)),
+        Token::plus(Loc(3, 4)),
+        Token::number(5, Loc(4, 5)),
+    ];
+    let node = parse(s).unwrap();
+    assert_eq!(
+        node,
+        Node::new(
+            Kind::Mul,
+            Node::link(Node::new(
+                Kind::Sub,
+                Node::link(Node::number(0)),
+                Node::link(Node::number(3)),
+            )),
+            Node::link(Node::number(5)),
+        ),
+    );
+}
