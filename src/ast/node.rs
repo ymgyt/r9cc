@@ -8,7 +8,14 @@ pub enum Kind {
     Ne,
     Lt,
     Le,
+    Assign,
+    LocalVar(LocalVar),
     Number(u64),
+}
+
+#[derive(Debug, PartialEq)]
+pub struct LocalVar {
+    offset: u64, // offset from base pointer
 }
 
 pub type Link = Option<Box<Node>>;
@@ -43,3 +50,5 @@ impl Node {
         Node::new(Kind::Number(n), None, None)
     }
 }
+
+pub type Program = Vec<Node>;

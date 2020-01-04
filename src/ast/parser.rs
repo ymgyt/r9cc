@@ -1,5 +1,5 @@
 use crate::{
-    ast::node::{Kind, Node},
+    ast::node::{Kind, Node, Program},
     lex::{Stream, Token, TokenKind},
 };
 use std::{error::Error as StdError, fmt, iter::Peekable, result::Result as StdResult};
@@ -38,9 +38,34 @@ where
         Self { tokens }
     }
 
-    // expr = equality
+    // program = stmt *
+    fn program(&mut self) -> Result<Program> {
+        let mut program = Program::new();
+        while !self.is_eof() {
+            program.push(self.stmt()?);
+        }
+        Ok(program)
+    }
+
+    // stmt = expr ";"
+    fn stmt(&mut self) -> Result<Node> {
+        let node = self.expr()?;
+        self.expect(TokenKind::SemiColon)?;
+        Ok(node)
+    }
+
+    // expr = assign
     fn expr(&mut self) -> Result<Node> {
-        self.equality()
+        self.assign()
+    }
+
+    // assign = equality ( "=" assign )*
+    fn assign(&mut self) -> Result<Node> {
+        let mut node = self.equality()?;
+        while self.consume(TokenKind::Assign)? {
+            node = Node::with(Kind::Assign, node, self.assign()?);
+        }
+        Ok(node)
     }
 
     // equality = relational ("==" relational | "!=" relational)*
@@ -171,6 +196,11 @@ where
                 self.tokens.next();
                 n
             })
+    }
+    fn is_eof(&mut self) -> bool {
+        self.tokens
+            .peek()
+            .map_or(false, |peek| peek.is_kind(TokenKind::Eof))
     }
 }
 
