@@ -1,6 +1,6 @@
 use crate::{
     ast::node::{Kind, Node, Program},
-    lex::{Stream, Token, TokenKind},
+    lex::{Stream, Token, TokenKind, Ident},
 };
 use std::{error::Error as StdError, fmt, iter::Peekable, result::Result as StdResult};
 
@@ -20,9 +20,9 @@ impl StdError for Error {}
 
 type Result<T> = StdResult<T, Error>;
 
-pub fn parse(stream: Stream) -> StdResult<Node, crate::Error> {
+pub fn parse(stream: Stream) -> StdResult<Program, crate::Error> {
     Parser::new(stream.into_iter().peekable())
-        .expr()
+        .program()
         .map_err(|e| crate::Error::from(e))
 }
 
@@ -140,12 +140,16 @@ where
         Ok(node)
     }
 
-    // primary = num | "(" expr ")"
+    // primary = num | ident | "(" expr ")"
     fn primary(&mut self) -> Result<Node> {
         let node = if self.consume(TokenKind::LParen)? {
             let node = self.expr()?;
             self.expect(TokenKind::RParen)?;
             node
+        } else if self.is_ident() {
+            let ident = self.expect_ident()?;
+            let offset = ((ident.name.chars().next().unwrap() as u8) - b'a' + 1) * 8;
+            Node::local_var(offset.into())
         } else {
             Node::number(self.expect_number()?)
         };
@@ -197,10 +201,22 @@ where
                 n
             })
     }
+    fn expect_ident(&mut self) -> Result<Ident> {
+        self.tokens.peek().ok_or(Error::Eof).and_then(|peek| match peek.value {
+            TokenKind::Ident(ref ident) => Ok(ident.clone()),
+            _ => Err(Error::UnexpectedToken(peek.clone())),
+        }).map(|ident| {
+            self.tokens.next();
+            ident
+        })
+    }
+    fn is_ident(&mut self) -> bool {
+       self.tokens.peek().map_or(false, |peek| peek.is_ident())
+    }
     fn is_eof(&mut self) -> bool {
         self.tokens
             .peek()
-            .map_or(false, |peek| peek.is_kind(TokenKind::Eof))
+            .map_or(true, |peek| peek.is_kind(TokenKind::Eof))
     }
 }
 

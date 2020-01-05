@@ -81,7 +81,7 @@ impl TokenKind {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Ident {
-    name: String,
+    pub name: String,
 }
 
 impl Clone for Ident {
@@ -155,6 +155,12 @@ impl Token {
         match self.value {
             TokenKind::Number(_) => kind.is_number(),
             _ => self.value == kind,
+        }
+    }
+    pub(crate) fn is_ident(&self) -> bool {
+        match self.value {
+            TokenKind::Ident(_) => true,
+            _ => false,
         }
     }
     fn eof(loc: Loc) -> Self {
@@ -287,6 +293,7 @@ pub fn tokenize(input: &str) -> StdResult<Stream, crate::Error> {
                 b'>' => push!(lex_greater(&input)),
                 b'<' => push!(lex_less(&input)),
                 b'a'..=b'z' => push!(lex_ident(&input)),
+                b';' => push!(lex_semi_colon(&input)),
                 _ if (b as char).is_ascii_whitespace() => input.consume_spaces(),
                 _ => {
                     return Err(
@@ -386,6 +393,11 @@ fn lex_ident(input: &Input) -> Result<Token> {
     input
         .consume_word()
         .map(|(pos, s)| Token::ident(s, Loc(pos, pos + s.len())))
+}
+
+fn lex_semi_colon(input: &Input) -> Result<Token> {
+    input.consume_byte(b';')
+        .map(|pos| Token::semi_colon(Loc(pos, pos+1)))
 }
 
 #[cfg(test)]

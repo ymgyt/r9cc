@@ -1,3 +1,3 @@
 mod asm;
 
-pub use asm::gen;
+pub use asm::{generate, Error};

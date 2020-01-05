@@ -46,10 +46,6 @@ fn comparison_operator_test() {
         tokenize("==").unwrap(),
         vec![Token::equal(Loc(0, 2)), Token::eof(Loc(2, 2))],
     );
-    assert!(match tokenize("=") {
-        Err(crate::Error::Lexer(e)) => e.value == ErrorKind::InvalidChar('='),
-        _ => false,
-    });
     assert_eq!(
         tokenize("!=").unwrap(),
         vec![Token::not_equal(Loc(0, 2)), Token::eof(Loc(2, 2))],
@@ -112,7 +108,7 @@ fn semi_colon_test() {
 fn assign_test() {
     assert_eq!(
         tokenize("=").unwrap(),
-        tokens(vec![Token::semi_colon(Loc(0, 1))]),
+        tokens(vec![Token::assign(Loc(0, 1))]),
     );
 }
 

@@ -49,4 +49,6 @@ try 0 '3<=2'
 try 1 '2<3'
 try 0 '3<2'
 
+try 1 'a=1;'
+
 echo OK

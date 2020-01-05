@@ -1,4 +1,6 @@
-#[derive(Debug, PartialEq)]
+pub type Program = Vec<Node>;
+
+#[derive(Debug, PartialEq, Clone)]
 pub enum Kind {
     Add,
     Sub,
@@ -13,9 +15,9 @@ pub enum Kind {
     Number(u64),
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct LocalVar {
-    offset: u64, // offset from base pointer
+    pub offset: u64, // offset from base pointer
 }
 
 pub type Link = Option<Box<Node>>;
@@ -49,6 +51,8 @@ impl Node {
     pub fn number(n: u64) -> Node {
         Node::new(Kind::Number(n), None, None)
     }
+    pub fn local_var(offset: u64) -> Node {
+        Node::new(Kind::LocalVar(LocalVar{offset}), None, None)
+    }
 }
 
-pub type Program = Vec<Node>;
