@@ -1,4 +1,4 @@
-use std::{cell::Cell, cmp::min, error::Error as StdError, fmt, result::Result as StdResult};
+use std::{cell::Cell, cmp::min, error::Error as StdError, fmt, result::Result as StdResult, str};
 
 #[derive(Debug, PartialEq)]
 pub enum ErrorKind {
@@ -49,22 +49,25 @@ impl<T> Annot<T> {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TokenKind {
-    Number(u64), // [0-9][0-9]*
-    Plus,        // '+'
-    Minus,       // '-'
-    Asterisk,    // '*'
-    Slash,       // '/'
-    LParen,      // '('
-    RParen,      // ')'
-    Eq,          //  ==
-    Ne,          // !=
-    Ge,          // >=
-    Gt,          // >
-    Le,          // <=
-    Lt,          // <
-    Eof,         // sentinel
+    Number(u64),  // [0-9][0-9]*
+    Plus,         // '+'
+    Minus,        // '-'
+    Asterisk,     // '*'
+    Slash,        // '/'
+    LParen,       // '('
+    RParen,       // ')'
+    Eq,           //  ==
+    Ne,           // !=
+    Ge,           // >=
+    Gt,           // >
+    Le,           // <=
+    Lt,           // <
+    Ident(Ident), // foo, bar,
+    SemiColon,    // ;
+    Assign,       // =
+    Eof,          // sentinel
 }
 
 impl TokenKind {
@@ -72,6 +75,27 @@ impl TokenKind {
         match *self {
             TokenKind::Number(_) => true,
             _ => false,
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct Ident {
+    pub name: String,
+}
+
+impl Clone for Ident {
+    fn clone(&self) -> Self {
+        Self {
+            name: self.name.clone(),
+        }
+    }
+}
+
+impl Ident {
+    fn new(name: &str) -> Self {
+        Self {
+            name: name.to_owned(),
         }
     }
 }
@@ -118,10 +142,25 @@ impl Token {
     pub(crate) fn less_than(loc: Loc) -> Self {
         Self::new(TokenKind::Lt, loc)
     }
+    pub(crate) fn ident(s: &str, loc: Loc) -> Self {
+        Self::new(TokenKind::Ident(Ident::new(s)), loc)
+    }
+    pub(crate) fn semi_colon(loc: Loc) -> Self {
+        Self::new(TokenKind::SemiColon, loc)
+    }
+    pub(crate) fn assign(loc: Loc) -> Self {
+        Self::new(TokenKind::Assign, loc)
+    }
     pub(crate) fn is_kind(&self, kind: TokenKind) -> bool {
         match self.value {
             TokenKind::Number(_) => kind.is_number(),
             _ => self.value == kind,
+        }
+    }
+    pub(crate) fn is_ident(&self) -> bool {
+        match self.value {
+            TokenKind::Ident(_) => true,
+            _ => false,
         }
     }
     fn eof(loc: Loc) -> Self {
@@ -170,7 +209,7 @@ impl<'a> Input<'a> {
     fn consume_numbers(&self) -> Result<(usize, u64)> {
         let start = self.pos();
         self.consume(|b| b"0123456789".contains(&b));
-        let n = std::str::from_utf8(&self.input[start..self.pos()])
+        let n = str::from_utf8(&self.input[start..self.pos()])
             .unwrap()
             .parse()
             .unwrap();
@@ -178,6 +217,14 @@ impl<'a> Input<'a> {
     }
     fn consume_spaces(&self) {
         self.consume(|b| b" \n\t".contains(&b))
+    }
+    fn consume_word(&self) -> Result<(usize, &str)> {
+        let start = self.pos();
+        self.consume(|b| (b'a' <= b && b <= b'z') || (b'A' <= b && b <= b'Z'));
+        Ok((
+            start,
+            str::from_utf8(&self.input[start..self.pos()]).unwrap(),
+        ))
     }
     fn consume(&self, mut f: impl FnMut(u8) -> bool) {
         while let Ok(b) = self.peek() {
@@ -245,6 +292,8 @@ pub fn tokenize(input: &str) -> StdResult<Stream, crate::Error> {
                 b'!' => push!(lex_exclamation(&input)),
                 b'>' => push!(lex_greater(&input)),
                 b'<' => push!(lex_less(&input)),
+                b'a'..=b'z' => push!(lex_ident(&input)),
+                b';' => push!(lex_semi_colon(&input)),
                 _ if (b as char).is_ascii_whitespace() => input.consume_spaces(),
                 _ => {
                     return Err(
@@ -303,7 +352,9 @@ fn lex_equal(input: &Input) -> Result<Token> {
     if consumed {
         Ok(Token::equal(Loc(pos, pos + 2)))
     } else {
-        Err(Error::invalid_char('=', Loc(pos, pos + 1)))
+        input
+            .consume_byte(b'=')
+            .map(|pos| Token::assign(Loc(pos, pos + 1)))
     }
 }
 
@@ -336,6 +387,17 @@ fn lex_less(input: &Input) -> Result<Token> {
             .consume_byte(b'<')
             .map(|pos| Token::less_than(Loc(pos, pos + 1)))
     }
+}
+
+fn lex_ident(input: &Input) -> Result<Token> {
+    input
+        .consume_word()
+        .map(|(pos, s)| Token::ident(s, Loc(pos, pos + s.len())))
+}
+
+fn lex_semi_colon(input: &Input) -> Result<Token> {
+    input.consume_byte(b';')
+        .map(|pos| Token::semi_colon(Loc(pos, pos+1)))
 }
 
 #[cfg(test)]

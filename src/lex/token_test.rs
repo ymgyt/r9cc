@@ -46,10 +46,6 @@ fn comparison_operator_test() {
         tokenize("==").unwrap(),
         vec![Token::equal(Loc(0, 2)), Token::eof(Loc(2, 2))],
     );
-    assert!(match tokenize("=") {
-        Err(crate::Error::Lexer(e)) => e.value == ErrorKind::InvalidChar('='),
-        _ => false,
-    });
     assert_eq!(
         tokenize("!=").unwrap(),
         vec![Token::not_equal(Loc(0, 2)), Token::eof(Loc(2, 2))],
@@ -74,14 +70,50 @@ fn comparison_operator_test() {
     let s = tokenize("== != >= > <= <").unwrap();
     assert_eq!(
         s,
-        vec![
+        tokens(vec![
             Token::equal(Loc(0, 2)),
             Token::not_equal(Loc(3, 5)),
             Token::greater_equal(Loc(6, 8)),
             Token::greater_than(Loc(9, 10)),
             Token::less_equal(Loc(11, 13)),
             Token::less_than(Loc(14, 15)),
-            Token::eof(Loc(15, 15)),
-        ]
+        ])
     );
+}
+
+#[test]
+fn single_identifier_test() {
+    assert_eq!(
+        tokenize("a").unwrap(),
+        tokens(vec![Token::ident("a", Loc(0, 1))],)
+    );
+    assert_eq!(
+        tokenize("a b").unwrap(),
+        tokens(vec![
+            Token::ident("a", Loc(0, 1)),
+            Token::ident("b", Loc(2, 3))
+        ],)
+    );
+}
+
+#[test]
+fn semi_colon_test() {
+    assert_eq!(
+        tokenize(";").unwrap(),
+        tokens(vec![Token::semi_colon(Loc(0, 1))]),
+    );
+}
+
+#[test]
+fn assign_test() {
+    assert_eq!(
+        tokenize("=").unwrap(),
+        tokens(vec![Token::assign(Loc(0, 1))]),
+    );
+}
+
+fn tokens(mut v: Vec<Token>) -> Vec<Token> {
+    let pos = v.last().unwrap().loc.1;
+    v.push(Token::eof(Loc(pos, pos)));
+    v
 }

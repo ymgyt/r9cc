@@ -1,12 +1,12 @@
-use crate::{ast, lex};
-use std::{error::Error as StdError, fmt, io};
+use crate::{ast, lex, asm};
+use std::{error::Error as StdError, fmt};
 
 #[derive(Debug)]
 pub enum Error {
     InputRequired,
     Lexer(lex::Error),
     Parser(ast::Error),
-    Io(io::Error),
+    Asm(asm::Error),
 }
 
 impl fmt::Display for Error {
@@ -14,7 +14,7 @@ impl fmt::Display for Error {
         use Error::*;
         match self {
             InputRequired => write!(f, "input required"),
-            _ => write!(f, "{}", self),
+            _ => write!(f, "{:?}", self),
         }
     }
 }
@@ -42,8 +42,8 @@ impl From<ast::Error> for Error {
     }
 }
 
-impl From<io::Error> for Error {
-    fn from(e: io::Error) -> Self {
-        Error::Io(e)
+impl From<asm::Error> for Error {
+    fn from(e: asm::Error) -> Self {
+         Error::Asm(e)
     }
 }

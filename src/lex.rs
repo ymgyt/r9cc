@@ -1,3 +1,3 @@
 pub mod token;
 
-pub use token::{tokenize, Error, Stream, Token, TokenKind};
+pub use token::{tokenize, Error, Stream, Token, TokenKind, Ident};
