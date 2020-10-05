@@ -275,7 +275,7 @@ pub fn tokenize(input: &str) -> StdResult<Stream, crate::Error> {
         match input.peek() {
             Err(e) => match e.value {
                 ErrorKind::Eof => {
-                    tokens.push(Token::eof(Loc(input.pos(), input.pos())));
+                    tokens.push(Token::eof(e.loc));
                     return Ok(tokens);
                 }
                 _ => return Err(e.into()),
